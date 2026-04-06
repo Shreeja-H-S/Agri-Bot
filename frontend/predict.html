@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgriBot - Disease Prediction</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 420px; }
+    h2 { color: #2e7d32; text-align: center; margin-bottom: 1.5rem; }
+    .upload-area { border: 2px dashed #a5d6a7; border-radius: 8px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; cursor: pointer; color: #555; }
+    .upload-area:hover { background: #f1f8e9; }
+    input[type="file"] { display: none; }
+    #preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+    button { width: 100%; padding: 0.75rem; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    button:hover { background: #1b5e20; }
+    button:disabled { background: #a5d6a7; cursor: not-allowed; }
+    .result { margin-top: 1.5rem; padding: 1rem; border-radius: 6px; background: #e8f5e9; display: none; }
+    .result p { margin: 0.3rem 0; color: #1b5e20; font-size: 1rem; }
+    .error { color: red; margin-top: 1rem; text-align: center; font-size: 0.9rem; }
+    .links { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
+    .links a { color: #2e7d32; text-decoration: none; margin: 0 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🌿 Disease Prediction</h2>
+
+    <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+      <p>📁 Click to upload a plant image</p>
+      <p style="font-size:0.8rem; color:#888; margin-top:0.3rem">JPG, PNG supported</p>
+    </div>
+    <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)" />
+    <img id="preview" alt="Preview" />
+
+    <button id="predictBtn" onclick="predict()" disabled>Predict Disease</button>
+    <div class="error" id="errMsg"></div>
+
+    <div class="result" id="result">
+      <p><strong>Result:</strong> <span id="resResult"></span></p>
+      <p><strong>Confidence:</strong> <span id="resConfidence"></span></p>
+    </div>
+
+    <div class="links">
+      <a href="login.html">Login</a> | <a href="chat.html">Chatbot</a>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:8000";
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const preview = document.getElementById("preview");
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+      document.getElementById("predictBtn").disabled = false;
+      document.getElementById("result").style.display = "none";
+      document.getElementById("errMsg").textContent = "";
+    }
+
+    async function predict() {
+      const fileInput = document.getElementById("imageInput");
+      const errMsg = document.getElementById("errMsg");
+      const resultBox = document.getElementById("result");
+      const btn = document.getElementById("predictBtn");
+
+      errMsg.textContent = "";
+      resultBox.style.display = "none";
+
+      if (!fileInput.files[0]) { errMsg.textContent = "Please select an image."; return; }
+
+      const formData = new FormData();
+      formData.append("image", fileInput.files[0]);
+
+      btn.disabled = true;
+      btn.textContent = "Predicting...";
+
+      try {
+        const headers = {};
+        const token = localStorage.getItem("access");
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`${API}/api/disease/predict/`, {
+          method: "POST",
+          headers,
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById("resResult").textContent = data.data.result;
+          document.getElementById("resConfidence").textContent = (data.data.confidence * 100).toFixed(0) + "%";
+          resultBox.style.display = "block";
+        } else {
+          errMsg.textContent = typeof data.message === 'object'
+            ? JSON.stringify(data.message)
+            : (data.message || "Prediction failed.");
+        }
+      } catch (e) {
+        errMsg.textContent = "Server error. Is the backend running?";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Predict Disease";
+      }
+    }
+  </script>
+</body>
+</html>

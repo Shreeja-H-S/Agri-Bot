@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgriBot - Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f4f0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 360px; }
+    h2 { color: #2e7d32; text-align: center; margin-bottom: 1.5rem; }
+    input { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    button { width: 100%; padding: 0.75rem; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    button:hover { background: #1b5e20; }
+    .msg { margin-top: 1rem; text-align: center; font-size: 0.9rem; }
+    .error { color: red; } .success { color: green; }
+    .links { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
+    .links a { color: #2e7d32; text-decoration: none; margin: 0 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🌿 AgriBot Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <div class="msg" id="msg"></div>
+    <div class="links">
+      <a href="predict.html">Disease Prediction</a> | <a href="chat.html">Chatbot</a>
+    </div>
+  </div>
+  <script>
+    const API = "http://127.0.0.1:8000";
+
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const msg = document.getElementById("msg");
+      if (!username || !password) { msg.className = "msg error"; msg.textContent = "Please fill all fields."; return; }
+      try {
+        const res = await fetch(`${API}/api/users/login/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("access", data.access);
+          localStorage.setItem("refresh", data.refresh);
+          msg.className = "msg success";
+          msg.textContent = "Login successful! Redirecting...";
+          setTimeout(() => window.location.href = "predict.html", 1000);
+        } else {
+          msg.className = "msg error";
+          msg.textContent = data.detail || "Invalid credentials.";
+        }
+      } catch (e) {
+        msg.className = "msg error";
+        msg.textContent = "Server error. Is the backend running?";
+      }
+    }
+  </script>
+</body>
+</html>
