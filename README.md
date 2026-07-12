@@ -1,1 +1,1 @@
-# AgriBot-AI-powered-farming-assistant_April_Batch-9_2026
+# AgriBot-AI-powered-farming-assistant
